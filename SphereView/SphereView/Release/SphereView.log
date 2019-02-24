@@ -1,0 +1,9 @@
+﻿  SphereView.cpp
+d:\bme\önlab\sphereview\sphereview\sphereview.cpp(69): warning C4018: '<': signed/unsigned mismatch
+d:\bme\önlab\sphereview\sphereview\sphereview.cpp(81): warning C4018: '<': signed/unsigned mismatch
+  Generating code
+  5 of 32 functions (15.6%) were compiled, the rest were copied from previous compilation.
+    0 functions were new in current compilation
+    9 functions had inline decision re-evaluated but remain unchanged
+  Finished generating code
+  SphereView.vcxproj -> D:\BME\Önlab\SphereView\Release\SphereView.exe

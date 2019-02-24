@@ -1,0 +1,8 @@
+﻿  pch.cpp
+  SphereView.cpp
+SphereView.obj : error LNK2001: unresolved external symbol __imp_glewExperimental
+SphereView.obj : error LNK2001: unresolved external symbol __imp_glewInit
+SphereView.obj : error LNK2001: unresolved external symbol __imp_glewGetErrorString
+SphereView.obj : error LNK2001: unresolved external symbol __imp___GLEW_VERSION_3_0
+SphereView.obj : error LNK2001: unresolved external symbol __imp_glewGetString
+D:\Ákos_BME\Önlab\SphereView\x64\Release\SphereView.exe : fatal error LNK1120: 5 unresolved externals

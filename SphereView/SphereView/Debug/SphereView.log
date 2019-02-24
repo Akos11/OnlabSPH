@@ -1,0 +1,22 @@
+﻿SphereView.obj : error LNK2019: unresolved external symbol __imp__glewInit@0 referenced in function "void __cdecl initOpenGL(void)" (?initOpenGL@@YAXXZ)
+SphereView.obj : error LNK2019: unresolved external symbol __imp__glewGetErrorString@4 referenced in function "void __cdecl initOpenGL(void)" (?initOpenGL@@YAXXZ)
+SphereView.obj : error LNK2019: unresolved external symbol __imp__glewGetString@4 referenced in function "void __cdecl initOpenGL(void)" (?initOpenGL@@YAXXZ)
+SphereView.obj : error LNK2019: unresolved external symbol __imp__glutInitWindowSize@8 referenced in function _main
+SphereView.obj : error LNK2019: unresolved external symbol __imp__glutInitDisplayMode@4 referenced in function _main
+SphereView.obj : error LNK2019: unresolved external symbol __imp__glutMainLoop@0 referenced in function _main
+SphereView.obj : error LNK2019: unresolved external symbol __imp__glutPostRedisplay@0 referenced in function "void __cdecl idle(void)" (?idle@@YAXXZ)
+SphereView.obj : error LNK2019: unresolved external symbol __imp__glutSwapBuffers@0 referenced in function "void __cdecl display(void)" (?display@@YAXXZ)
+SphereView.obj : error LNK2019: unresolved external symbol __imp__glutIdleFunc@4 referenced in function _main
+SphereView.obj : error LNK2019: unresolved external symbol __imp__glutKeyboardFunc@4 referenced in function _main
+SphereView.obj : error LNK2019: unresolved external symbol __imp__glutReshapeFunc@4 referenced in function _main
+SphereView.obj : error LNK2019: unresolved external symbol __imp__glutDisplayFunc@4 referenced in function _main
+SphereView.obj : error LNK2019: unresolved external symbol __imp__glutMouseFunc@4 referenced in function _main
+SphereView.obj : error LNK2019: unresolved external symbol __imp__glutMotionFunc@4 referenced in function _main
+SphereView.obj : error LNK2019: unresolved external symbol __imp__glutKeyboardUpFunc@4 referenced in function _main
+SphereView.obj : error LNK2019: unresolved external symbol __imp____glutInitWithExit@12 referenced in function _glutInit_ATEXIT_HACK@8
+SphereView.obj : error LNK2019: unresolved external symbol __imp__glutInitContextVersion@8 referenced in function _main
+SphereView.obj : error LNK2019: unresolved external symbol __imp__glutInitContextFlags@4 referenced in function _main
+SphereView.obj : error LNK2001: unresolved external symbol __imp____GLEW_VERSION_3_0
+SphereView.obj : error LNK2001: unresolved external symbol __imp__glewExperimental
+D:\Ákos_BME\Önlab\freeglut-MSVC-3.0.0-2.mp\freeglut\lib\x64\freeglut.lib : warning LNK4272: library machine type 'x64' conflicts with target machine type 'x86'
+D:\Ákos_BME\Önlab\SphereView\Debug\SphereView.exe : fatal error LNK1120: 20 unresolved externals

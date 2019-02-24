@@ -1,0 +1,8 @@
+﻿  pch.cpp
+  SphereView.cpp
+SphereView.obj : error LNK2019: unresolved external symbol __imp_glewInit referenced in function "void __cdecl initOpenGL(void)" (?initOpenGL@@YAXXZ)
+SphereView.obj : error LNK2019: unresolved external symbol __imp_glewGetErrorString referenced in function "void __cdecl initOpenGL(void)" (?initOpenGL@@YAXXZ)
+SphereView.obj : error LNK2019: unresolved external symbol __imp_glewGetString referenced in function "void __cdecl initOpenGL(void)" (?initOpenGL@@YAXXZ)
+SphereView.obj : error LNK2001: unresolved external symbol __imp___GLEW_VERSION_3_0
+SphereView.obj : error LNK2001: unresolved external symbol __imp_glewExperimental
+D:\Ákos_BME\Önlab\SphereView\x64\Debug\SphereView.exe : fatal error LNK1120: 5 unresolved externals

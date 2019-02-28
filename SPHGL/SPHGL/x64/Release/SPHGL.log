@@ -1,0 +1,10 @@
+﻿  SPHGL.cpp
+c:\users\barni\documents\bme\felev6\onlab\workspace\sphgl\sphgl\Const.hpp(42): warning C4305: 'argument': truncation from 'double' to 'float'
+SPHGL.cpp(178): warning C4305: 'argument': truncation from 'double' to 'float'
+  Generating code
+  34 of 326 functions (10.4%) were compiled, the rest were copied from previous compilation.
+    0 functions were new in current compilation
+    2 functions had inline decision re-evaluated but remain unchanged
+  Finished generating code
+  SPHGL.vcxproj -> C:\Users\Barni\Documents\BME\felev6\onlab\workspace\SPHGL\x64\Release\SPHGL.exe
+  SPHGL.vcxproj -> C:\Users\Barni\Documents\BME\felev6\onlab\workspace\SPHGL\x64\Release\SPHGL.pdb (Full PDB)

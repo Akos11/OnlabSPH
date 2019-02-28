@@ -1,0 +1,66 @@
+﻿  Vec.cpp
+  SphHelper.cpp
+c:\users\barni\documents\bme\felev6\onlab\workspace\sphgl\sphgl\sphhelper.cpp(164): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
+c:\users\barni\documents\bme\felev6\onlab\workspace\sphgl\sphgl\sphhelper.cpp(173): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
+c:\users\barni\documents\bme\felev6\onlab\workspace\sphgl\sphgl\sphhelper.cpp(180): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
+c:\users\barni\documents\bme\felev6\onlab\workspace\sphgl\sphgl\sphhelper.cpp(187): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
+c:\users\barni\documents\bme\felev6\onlab\workspace\sphgl\sphgl\sphhelper.cpp(195): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
+c:\users\barni\documents\bme\felev6\onlab\workspace\sphgl\sphgl\sphhelper.cpp(203): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
+c:\program files (x86)\microsoft visual studio\2017\enterprise\vc\tools\msvc\14.11.25503\include\type_traits(1825): warning C4244: 'return': conversion from 'int' to 'float', possible loss of data
+  c:\program files (x86)\microsoft visual studio\2017\enterprise\vc\tools\msvc\14.11.25503\include\functional(299): note: see reference to function template instantiation '_Rx std::_Invoker_ret<_Rx,false>::_Call<int(__cdecl *&)(T),_Ty>(int (__cdecl *&)(T),_Ty &&)' being compiled
+          with
+          [
+              _Rx=float,
+              T=float,
+              _Ty=float
+          ]
+  c:\program files (x86)\microsoft visual studio\2017\enterprise\vc\tools\msvc\14.11.25503\include\functional(299): note: see reference to function template instantiation '_Rx std::_Invoker_ret<_Rx,false>::_Call<int(__cdecl *&)(T),_Ty>(int (__cdecl *&)(T),_Ty &&)' being compiled
+          with
+          [
+              _Rx=float,
+              T=float,
+              _Ty=float
+          ]
+  c:\program files (x86)\microsoft visual studio\2017\enterprise\vc\tools\msvc\14.11.25503\include\functional(298): note: while compiling class template member function 'float std::_Func_impl_no_alloc<int (__cdecl *)(T),_Ret,float>::_Do_call(float &&)'
+          with
+          [
+              T=float,
+              _Ret=float
+          ]
+  c:\program files (x86)\microsoft visual studio\2017\enterprise\vc\tools\msvc\14.11.25503\include\functional(136): note: see reference to class template instantiation 'std::_Func_impl_no_alloc<int (__cdecl *)(T),_Ret,float>' being compiled
+          with
+          [
+              T=float,
+              _Ret=float
+          ]
+  c:\program files (x86)\microsoft visual studio\2017\enterprise\vc\tools\msvc\14.11.25503\include\functional(401): note: see reference to class template instantiation 'std::_Is_large<_Impl>' being compiled
+  c:\program files (x86)\microsoft visual studio\2017\enterprise\vc\tools\msvc\14.11.25503\include\functional(583): note: see reference to function template instantiation 'void std::_Func_class<_Ret,float>::_Reset<int(__cdecl *)(T)>(_Fx &&)' being compiled
+          with
+          [
+              _Ret=float,
+              T=float,
+              _Fx=int (__cdecl *)(float)
+          ]
+  c:\program files (x86)\microsoft visual studio\2017\enterprise\vc\tools\msvc\14.11.25503\include\functional(583): note: see reference to function template instantiation 'void std::_Func_class<_Ret,float>::_Reset<int(__cdecl *)(T)>(_Fx &&)' being compiled
+          with
+          [
+              _Ret=float,
+              T=float,
+              _Fx=int (__cdecl *)(float)
+          ]
+  c:\users\barni\documents\bme\felev6\onlab\workspace\sphgl\sphgl\sphhelper.cpp(134): note: see reference to function template instantiation 'std::function<float (float)>::function<int(__cdecl *)(T),void>(_Fx)' being compiled
+          with
+          [
+              T=float,
+              _Fx=int (__cdecl *)(float)
+          ]
+  c:\users\barni\documents\bme\felev6\onlab\workspace\sphgl\sphgl\sphhelper.cpp(134): note: see reference to function template instantiation 'std::function<float (float)>::function<int(__cdecl *)(T),void>(_Fx)' being compiled
+          with
+          [
+              T=float,
+              _Fx=int (__cdecl *)(float)
+          ]
+  SPHGL.cpp
+  Generating Code...
+  SPHGL.vcxproj -> C:\Users\Barni\Documents\BME\felev6\onlab\workspace\SPHGL\x64\Debug\SPHGL.exe
+  SPHGL.vcxproj -> C:\Users\Barni\Documents\BME\felev6\onlab\workspace\SPHGL\x64\Debug\SPHGL.pdb (Partial PDB)

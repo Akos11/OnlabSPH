@@ -14,7 +14,7 @@ int width = 512;
 int height = 512;
 
 bool keysPressed[256];
-float radius = 0.02f;
+float radius = 0.015f;
 
 ////Simulation
 
@@ -175,11 +175,31 @@ class SPH_Simulator {
 
 			if (sphereF > 0.0f) {
 				Vec3 contactPoint = sphere.getContactPoint(p->pos);
-				p->pos = contactPoint -randFloatBtw(0.0f, 0.01) * (contactPoint / contactPoint.len());
+				p->pos = contactPoint;// -0.01f * (contactPoint / contactPoint.len());// -randFloatBtw(0.0f, 0.01) * (contactPoint / contactPoint.len());
 				p->currVel = sphere.velAfterCollision(p->currVel, sphere.getSurfaceNormal(p->pos), sphere.getDepth(p->pos));
 			}
 
 			p->currVel = p->getVelocityAtT();
+		}
+	}
+
+	void boundaryForceStep() {
+		for (int i = 0; i < Const::particleNum; ++i) {
+			Particle * p = particles.particles[i];
+			std::vector<Particle *> borderNeighbors = particles.spatialQueryBorder(p);
+
+			Vec3 Fak = Vec3{};
+			for (auto k : borderNeighbors) {
+				Vec3 xak = (k->pos) - (p->pos);
+				Vec3 surfNorm = k->pos / k->pos.len();
+
+				float y = xak.dot(surfNorm);
+				float x = sqrt(xak.len() * xak.len() - y*y);
+
+				Fak += -(Const::particleM / (Const::particleM + Const::particleM)) * B(x, y) * surfNorm;
+			}
+
+			p->F += Fak;
 		}
 	}
 	
@@ -195,12 +215,14 @@ public:
 		integrator = LeapFrogIntegrator{};
 
 		particles.init();
+		particles.initBorder();
 	}
 
 	void simulationStep() {
 		densityAndPresureStep();
 
 		forcesStep();
+		boundaryForceStep();
 
 
 		integrator.stepIntegrator(particles.particles);
@@ -219,6 +241,20 @@ public:
 		return particles.particles;
 	}
 
+	const std::vector<Particle *>& getBorderParticles() {
+		return particles.borderParticles;
+	}
+
+	const std::vector<Particle *> testBorderSpatialQuery(unsigned int i) {
+		std::vector<Particle *> neighs =  particles.spatialQueryBorder(particles.particles[i]);
+		return neighs;
+	}
+
+	void clear() {
+		for (int i = 0; i < Const::particleNum; ++i) {
+			delete particles.particles[i];
+		}
+	}
 
 };
 
@@ -244,7 +280,7 @@ void initOpenGL() {
 		}
 	}
 
-	glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
+	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 }
 
 void DrawCircle(float cx, float cy, float r, int num_segments)
@@ -269,6 +305,10 @@ void display() {
 
 //	simulationStep();
 
+	glColor3f(0.5f, 0.5f, 0.5f);
+
+	DrawCircle(0, 0, 0.8f, 60);
+
 	glColor3f(0.17f, 0.4f, 0.6f);
 	//visualizationStep();
 //	for (int i = 0; i < particleNumber; i++)
@@ -278,13 +318,32 @@ void display() {
 
 	sim.simulationStep();
 
+	glColor3f(0.0f, 0.0f, 1.0f);
 	const std::vector<Particle *> prtcls = sim.getParticles();
 	for (auto p : prtcls) {
 		Vec3 r = p->pos;
-
-		DrawCircle(r.x, r.y, radius, 30);
+		float v = p->currVel.len();
+		//glColor3f(v, v, 1.0f);
+		DrawCircle(r.x, r.y, radius, 7);
 	}
 
+	
+	glColor3f(0.0f, 1.0f, 0.0f);
+	const std::vector<Particle *> border = sim.getBorderParticles();
+	for (auto p : border) {
+		Vec3 r = p->pos;
+		DrawCircle(r.x, r.y, radius, 7);
+	}
+	/*
+	
+	glColor3f(1.0f, 0.0f, 0.0f);
+	std::vector<Particle *> testBorderNeighbors = sim.testBorderSpatialQuery(55);
+	for (auto p : testBorderNeighbors) {
+		Vec3 r = p->pos;
+		DrawCircle(r.x, r.y, radius, 10);
+	}
+	*/	
+	
 
 
 	glEnable(GL_DEPTH_TEST);
@@ -304,6 +363,7 @@ void keyUp(unsigned char key, int x, int y) {
 	switch (key) {
 	case 'r':
 //		resetSimulation();
+		sim.clear();
 		sim.init();
 		break;
 	}

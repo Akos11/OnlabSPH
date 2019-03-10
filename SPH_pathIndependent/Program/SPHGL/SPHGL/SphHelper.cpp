@@ -8,19 +8,35 @@ float randFloatBtw(float min, float max) {
 }
 
 int spatialHash3D(const Particle * p) {
-	long long xor2 = static_cast<long long>(static_cast<long long>((p->pos).x / Const::h) * Const::p1)
+	long long xor = static_cast<long long>(static_cast<long long>((p->pos).x / Const::h) * Const::p1)
 						^ static_cast<long long>(static_cast<long long>((p->pos).y / Const::h) * Const::p2)
 						^ static_cast<long long>(static_cast<long long>((p->pos).z / Const::h) * Const::p3);
 	
-	return (Const::nH + (xor2%Const::nH)) % Const::nH;
+	return (Const::nH + (xor%Const::nH)) % Const::nH;
 }
 
 int spatialHash3D(const Vec3 r) {
-	long long xor2 = static_cast<long long>(static_cast<long long>(r.x / Const::h) * Const::p1)
+	long long xor = static_cast<long long>(static_cast<long long>(r.x / Const::h) * Const::p1)
 						^ static_cast<long long>(static_cast<long long>(r.y / Const::h) * Const::p2)
 						^ static_cast<long long>(static_cast<long long>(r.z / Const::h) * Const::p3);
 	
-	return (Const::nH + (xor2%Const::nH)) % Const::nH;
+	return (Const::nH + (xor%Const::nH)) % Const::nH;
+}
+
+int spatialHash3DBorder(const Particle * p) {
+	long long xor = static_cast<long long>(static_cast<long long>((p->pos).x / Const::h) * Const::p1)
+						^ static_cast<long long>(static_cast<long long>((p->pos).y / Const::h) * Const::p2)
+						^ static_cast<long long>(static_cast<long long>((p->pos).z / Const::h) * Const::p3);
+	
+	return (Const::borderNH + (xor%Const::borderNH)) % Const::borderNH;
+}
+
+int spatialHash3DBorder(const Vec3 r) {
+	long long xor = static_cast<long long>(static_cast<long long>(r.x / Const::h) * Const::p1)
+						^ static_cast<long long>(static_cast<long long>(r.y / Const::h) * Const::p2)
+						^ static_cast<long long>(static_cast<long long>(r.z / Const::h) * Const::p3);
+	
+	return (Const::borderNH + (xor%Const::borderNH)) % Const::borderNH;
 }
 
 ////Particle
@@ -55,17 +71,46 @@ void Particles::init() {
 			float x = (Const::h / 3)* (i-((Const::partNumX-1)/2));
 			float y = (Const::h / 3) * (j-((Const::partNumY-1)/2));
 
-			Particle * p = new Particle{ Vec3{x, y, 0.0f} };
+			Particle * p = new Particle{ Vec3{x+0.0f, y, 0.0f} };
 			particles[i * Const::partNumX + j] = p;
 			insertParticle(p);
 		}
 	}
 }
 
+void Particles::initBorder() {
+	float radStep = (2 * Const::PI) / Const::borderParticleNum;
+
+	int num;
+	for (int i = 0; i < Const::borderParticleNum; ++i) {
+		float x = Const::borderR * cosf(radStep * i);
+		float y = Const::borderR * sinf(radStep * i);
+
+		Particle * p = new Particle{ Vec3{x, y, 0.0f} };
+		borderParticles[i] = p;
+		insertBorderParticle(p);
+		//num = i;
+	}
+	
+	//std::cout << num;
+
+	/*
+	for (int i = 0; i < borderHash_table.size(); ++i) {
+		std::cout << borderHash_table[i].size() << std::endl;
+	}
+	*/
+}
+
 void Particles::insertParticle(Particle * p) {
 	int hashIndex = spatialHash3D(p);
 
 	hash_table[hashIndex].push_back(p);
+}
+
+void Particles::insertBorderParticle(Particle * p) {
+	int hashIndex = spatialHash3DBorder(p);
+
+	borderHash_table[hashIndex].push_back(p);
 }
 
 std::vector<Particle *> Particles::spatialQuery(Particle * queryP) {
@@ -99,6 +144,44 @@ std::vector<Particle *> Particles::spatialQuery(Particle * queryP) {
 		for (auto p : L) {
 			if ((queryP->pos - p->pos).len() <= Const::h)
 				neighbors.push_back(p);
+		}
+	}
+
+	return neighbors;
+}
+
+std::vector<Particle *> Particles::spatialQueryBorder(Particle * queryP) {
+	std::vector<Particle *> neighbors = std::vector<Particle *>{};
+
+	Vec3 v_h = Vec3{ Const::h, Const::h, Const::h };
+	Vec3 rq = Vec3{ queryP->pos };
+
+	float xMin = rq.x - v_h.x;
+	float yMin = rq.y - v_h.y;
+	float zMin = rq.z - v_h.z;
+
+	float xMax = rq.x + v_h.x;
+	float yMax = rq.y + v_h.y;
+	float zMax = rq.z + v_h.z;
+	
+	float iter = Const::h / 2;
+	
+	std::set<int> hashVals = std::set<int>{};
+	for (float x = xMin; x <= xMax; x+=iter) {
+		for (float y = yMin; y <= yMax; y+=iter) {
+				Vec3 xyz = Vec3{ x, y, 0.0f };
+
+				hashVals.insert(spatialHash3DBorder(xyz));
+		}
+	}
+
+	for (int hashVal : hashVals) {
+		std::vector<Particle *> L = borderHash_table[hashVal];
+
+		for (auto p : L) {
+			if ((queryP->pos - p->pos).len() <= 1 * Const::h) {
+				neighbors.push_back(p);
+			}
 		}
 	}
 
@@ -184,14 +267,14 @@ Vec3 Sphere::getSurfaceNormal(const Vec3& x) {
 	//if (fx == 0)
 	//	fx = 1;
 
-	return sgn(-fx) * ((c - x) / (c - x).len());
+	return sgn(fx) * ((c - x) / (c - x).len());
 }
 
 Vec3 Sphere::velAfterCollision(const Vec3& vel, const Vec3& n, float depth) {
 	float coef = 1 + Const::cr * (depth / (Const::dt*vel.len()));
 	float udotn = vel.dot(n);
 	
-	return vel - coef * udotn * n;
+	return vel - 1.0f * udotn * n;
 }
 
 ////END OF Sphere
@@ -268,3 +351,25 @@ float W_visc_lapl(const Vec3& r, float h) {
 	return coef * weight;
 }
 
+float Gamma(float a) {
+	float dp = Const::h / 2;
+	return a < (dp) ? (1 - (a / dp)) : 0.0f;
+}
+
+float Xsi(float a) {
+	float q = a / Const::h;
+	float beta = (0.02 * Const::c * Const::c) / a;
+
+	if (0 < q && q < (float)(2 / 3))
+		return (float)(2 / 3) * beta;
+	else if ((float)(2 / 3) < q && q < 1.0f)
+		return beta * (2 * q - 1.5f*q*q);
+	else if (1 < q && q < 2)
+		0.5f * beta * (2 - q) * (2 - q);
+	else
+		return 0.0f;
+}
+
+float B(float x, float y) {
+	return Gamma(y) * Xsi(x);
+}

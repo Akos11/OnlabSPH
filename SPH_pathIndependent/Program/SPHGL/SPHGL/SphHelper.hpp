@@ -40,19 +40,28 @@ struct Particle {
 int spatialHash3D(const Particle * p);
 int spatialHash3D(const Vec3 r);
 
+int spatialHash3DBorder(const Particle * p);
+int spatialHash3DBorder(const Vec3 r);
+
 struct Particles {
 
 	std::vector<Particle *> particles = std::vector<Particle *>{ Const::particleNum };
 	std::vector<std::vector<Particle *> > hash_table = std::vector<std::vector<Particle *> >{ Const::nH };
 
+	std::vector<Particle *> borderParticles = std::vector<Particle *>{ Const::borderParticleNum };
+	std::vector<std::vector<Particle *> > borderHash_table = std::vector<std::vector<Particle *> >{ Const::borderNH };
+
 	Particles() {}
 
 	void initRnd();
 	void init(); 
+	void initBorder();
 
 	void insertParticle(Particle * p);
+	void insertBorderParticle(Particle * p);
 
 	std::vector<Particle *> spatialQuery(Particle * queryP);
+	std::vector<Particle *> spatialQueryBorder(Particle * queryP);
 
 	void updateSpatialHashing();
 };
@@ -81,7 +90,7 @@ struct Sphere {
 	Vec3 c;
 	float r;
 
-	Sphere(Vec3 c = Vec3{}, float r = 0.8f) : c {c}, r{r} {}
+	Sphere(Vec3 c = Vec3{}, float r = Const::borderR) : c {c}, r{r} {}
 
 	float F(const Vec3& x);
 	Vec3 getContactPoint(const Vec3& x);
@@ -106,6 +115,8 @@ float W_def_lapl(const Vec3& r, float h);
 Vec3 W_press_grad(const Vec3& r, float h);
 
 float W_visc_lapl(const Vec3& r, float h);
+
+float B(float x, float y);
 
 
 #endif // !SPHHELPER_HPP

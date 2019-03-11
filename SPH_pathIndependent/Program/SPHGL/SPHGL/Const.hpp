@@ -5,7 +5,7 @@
 #include <cmath>
 
 namespace Const {
-	const bool DDD = true;
+	const bool DDD = false;
 
 	const double PI = 3.14159265358979323846;
 	

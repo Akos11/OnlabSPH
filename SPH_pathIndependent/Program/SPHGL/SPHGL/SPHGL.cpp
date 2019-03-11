@@ -16,6 +16,8 @@ int height = 512;
 bool keysPressed[256];
 float radius = 0.015f;
 
+int mode = 0;
+
 ////Simulation
 
 class SPH_Simulator {
@@ -283,9 +285,20 @@ void initOpenGL() {
 	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 }
 
-void DrawCircle(float cx, float cy, float r, int num_segments)
+void DrawCircle(float cx, float cy, float r, int num_segments, Vec3* velocity = NULL, Vec3* color = NULL)
 {
 	glBegin(GL_TRIANGLE_FAN);
+	float length = -1;
+	if (velocity != NULL) {
+		length = velocity->len();
+		
+	}
+	if (color != NULL) {
+		glColor3f(color->x, color->y, color->z);
+	}
+	else if (length != -1){
+		glColor3f(length, 0.1f, 0.1f);
+	}
 	for (int ii = 0; ii < num_segments; ii++)
 	{
 		float theta = 2.0f * 3.1415926f * float(ii) / float(num_segments);//get the current angle
@@ -293,6 +306,18 @@ void DrawCircle(float cx, float cy, float r, int num_segments)
 		float x = r * cosf(theta);//calculate the x component
 		float y = r * sinf(theta);//calculate the y component
 
+		if (velocity != NULL)
+		{
+			Vec3 temp = Vec3(x, y, 0);
+			temp = length * (temp / r);
+			if (fabs(temp.x - velocity->x) < 0.1 && fabs(temp.y - velocity->y) < 0.1)
+			{
+				float tempf = 12.0f * length;
+				if (tempf < 1) tempf = 1;
+				x *= tempf;
+				y *= tempf;
+			}
+		}
 		glVertex2f(x + cx, y + cy);//output vertex
 
 	}
@@ -324,7 +349,12 @@ void display() {
 		Vec3 r = p->pos;
 		float v = p->currVel.len();
 		//glColor3f(v, v, 1.0f);
-		DrawCircle(r.x, r.y, radius, 7);
+		if (mode == 1)
+			DrawCircle(r.x, r.y, radius, 7,&(p->currVel), &(p->color));
+		else if (mode == 2)
+			DrawCircle(r.x, r.y, radius, 7, &(p->currVel));
+		else
+			DrawCircle(r.x, r.y, radius, 7);
 	}
 
 	
@@ -365,6 +395,10 @@ void keyUp(unsigned char key, int x, int y) {
 //		resetSimulation();
 		sim.clear();
 		sim.init();
+		break;
+	
+	case 'v':
+		mode = (mode+1) % 3;
 		break;
 	}
 /*

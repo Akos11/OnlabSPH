@@ -25,12 +25,15 @@ struct Particle {
 	float rho;
 	Vec3 Fint = Vec3{};
 	Vec3 Fext = Vec3{};
+	Vec3 color;
 
 	Particle(Vec3 pos, Vec3 vel, Vec3 F) : pos{pos}, currVel{vel}, F{F}, p{ Const::p }, rho{ Const::rho0 } {
 		currVel = currVel - 0.5f * Const::dt * (F / rho);
+		color = Vec3(randFloatBtw(0.0f, 1.0f), randFloatBtw(0.0f, 1.0f), randFloatBtw(0.0f, 1.0f));
 	}
 	Particle(Vec3 pos) : pos{ pos }, currVel{ Vec3{0.0f, 0.0f, 0.0f} }, F{ Vec3{0.0f, 0.0f, 0.0f} }, p{ Const::p }, rho{ Const::rho0 } {
 		currVel = currVel - 0.5f * Const::dt * (F / rho);
+		color = Vec3(randFloatBtw(0.0f, 1.0f), randFloatBtw(0.0f, 1.0f), randFloatBtw(0.0f, 1.0f));
 	}
 
 	Vec3 getAcceleration();

@@ -8,35 +8,35 @@ float randFloatBtw(float min, float max) {
 }
 
 int spatialHash3D(const Particle * p) {
-	long long xor = static_cast<long long>(static_cast<long long>((p->pos).x / Const::h) * Const::p1)
+	long long xor2 = static_cast<long long>(static_cast<long long>((p->pos).x / Const::h) * Const::p1)
 						^ static_cast<long long>(static_cast<long long>((p->pos).y / Const::h) * Const::p2)
 						^ static_cast<long long>(static_cast<long long>((p->pos).z / Const::h) * Const::p3);
 	
-	return (Const::nH + (xor%Const::nH)) % Const::nH;
+	return (Const::nH + (xor2%Const::nH)) % Const::nH;
 }
 
 int spatialHash3D(const Vec3 r) {
-	long long xor = static_cast<long long>(static_cast<long long>(r.x / Const::h) * Const::p1)
+	long long xor2 = static_cast<long long>(static_cast<long long>(r.x / Const::h) * Const::p1)
 						^ static_cast<long long>(static_cast<long long>(r.y / Const::h) * Const::p2)
 						^ static_cast<long long>(static_cast<long long>(r.z / Const::h) * Const::p3);
 	
-	return (Const::nH + (xor%Const::nH)) % Const::nH;
+	return (Const::nH + (xor2%Const::nH)) % Const::nH;
 }
 
 int spatialHash3DBorder(const Particle * p) {
-	long long xor = static_cast<long long>(static_cast<long long>((p->pos).x / Const::h) * Const::p1)
+	long long xor2 = static_cast<long long>(static_cast<long long>((p->pos).x / Const::h) * Const::p1)
 						^ static_cast<long long>(static_cast<long long>((p->pos).y / Const::h) * Const::p2)
 						^ static_cast<long long>(static_cast<long long>((p->pos).z / Const::h) * Const::p3);
 	
-	return (Const::borderNH + (xor%Const::borderNH)) % Const::borderNH;
+	return (Const::borderNH + (xor2%Const::borderNH)) % Const::borderNH;
 }
 
 int spatialHash3DBorder(const Vec3 r) {
-	long long xor = static_cast<long long>(static_cast<long long>(r.x / Const::h) * Const::p1)
+	long long xor2 = static_cast<long long>(static_cast<long long>(r.x / Const::h) * Const::p1)
 						^ static_cast<long long>(static_cast<long long>(r.y / Const::h) * Const::p2)
 						^ static_cast<long long>(static_cast<long long>(r.z / Const::h) * Const::p3);
 	
-	return (Const::borderNH + (xor%Const::borderNH)) % Const::borderNH;
+	return (Const::borderNH + (xor2%Const::borderNH)) % Const::borderNH;
 }
 
 ////Particle

@@ -256,6 +256,10 @@ public:
 		for (int i = 0; i < Const::particleNum; ++i) {
 			delete particles.particles[i];
 		}
+
+		for (int i = 0; i < Const::borderParticleNum; ++i) {
+			delete particles.borderParticles[i];
+		}
 	}
 
 };

@@ -79,20 +79,43 @@ void Particles::init() {
 }
 
 void Particles::initBorder() {
-	float radStep = (2 * Const::PI) / Const::borderParticleNum;
+	if (!Const::DDD) {
+		float radStep = (2 * Const::PI) / Const::borderParticleNum;
 
-	int num;
-	for (int i = 0; i < Const::borderParticleNum; ++i) {
-		float x = Const::borderR * cosf(radStep * i);
-		float y = Const::borderR * sinf(radStep * i);
+		int num;
+		for (int i = 0; i < Const::borderParticleNum; ++i) {
+			float x = Const::borderR * cosf(radStep * i);
+			float y = Const::borderR * sinf(radStep * i);
 
-		Particle * p = new Particle{ Vec3{x, y, 0.0f} };
-		borderParticles[i] = p;
-		insertBorderParticle(p);
-		//num = i;
+			Particle * p = new Particle{ Vec3{x, y, 0.0f} };
+			borderParticles[i] = p;
+			insertBorderParticle(p);
+			//num = i;
+		}
+
+		//std::cout << num;
 	}
-	
-	//std::cout << num;
+	else {
+
+		int bordNum = 0;
+		float hHalf = Const::h / 2;
+		int thetaNum = (2 * Const::PI) / (Const::h / 2);
+		int fiNum = (Const::PI) / (Const::h / 2);
+		for (int t = 0; t < thetaNum; ++t) {
+			for (int f = 0; f < fiNum; ++f) {
+				float x = Const::borderR * cosf(t * hHalf) * sinf(f * hHalf);
+				float y = Const::borderR * sinf(t * hHalf) * sinf(f * hHalf);
+				float z = Const::borderR * cosf(f * hHalf);
+
+				Particle * p = new Particle{ Vec3{x, y, z} };
+				borderParticles[bordNum] = p;
+				insertBorderParticle(p);
+				bordNum++;
+			}
+		}
+
+		std::cout << bordNum;
+	}
 
 	/*
 	for (int i = 0; i < borderHash_table.size(); ++i) {
@@ -132,9 +155,18 @@ std::vector<Particle *> Particles::spatialQuery(Particle * queryP) {
 	std::set<int> hashVals = std::set<int>{};
 	for (float x = xMin; x <= xMax; x+=iter) {
 		for (float y = yMin; y <= yMax; y+=iter) {
+			if (!Const::DDD) {
 				Vec3 xyz = Vec3{ x, y, 0.0f };
 
 				hashVals.insert(spatialHash3D(xyz));
+			}
+			else {
+				for (float z = zMin; z <= zMax; z += iter) {
+					Vec3 xyz = Vec3{ x, y, z };
+
+					hashVals.insert(spatialHash3D(xyz));
+				}
+			}
 		}
 	}
 
@@ -169,9 +201,18 @@ std::vector<Particle *> Particles::spatialQueryBorder(Particle * queryP) {
 	std::set<int> hashVals = std::set<int>{};
 	for (float x = xMin; x <= xMax; x+=iter) {
 		for (float y = yMin; y <= yMax; y+=iter) {
+			if (!Const::DDD) {
 				Vec3 xyz = Vec3{ x, y, 0.0f };
 
 				hashVals.insert(spatialHash3DBorder(xyz));
+			}
+			else {
+				for (float z = zMin; z <= zMax; z += iter) {
+					Vec3 xyz = Vec3{ x, y, z };
+
+					hashVals.insert(spatialHash3DBorder(xyz));
+				}
+			}
 		}
 	}
 

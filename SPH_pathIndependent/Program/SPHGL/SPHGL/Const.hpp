@@ -5,6 +5,8 @@
 #include <cmath>
 
 namespace Const {
+	const bool DDD = true;
+
 	const double PI = 3.14159265358979323846;
 	
 	const Vec3 g = Vec3{ 0.0f, -9.82f, 0.0f };

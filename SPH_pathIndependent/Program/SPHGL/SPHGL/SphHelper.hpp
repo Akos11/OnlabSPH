@@ -51,8 +51,8 @@ struct Particles {
 	std::vector<Particle *> particles = std::vector<Particle *>{ Const::particleNum };
 	std::vector<std::vector<Particle *> > hash_table = std::vector<std::vector<Particle *> >{ Const::nH };
 
-	std::vector<Particle *> borderParticles = std::vector<Particle *>{ Const::borderParticleNum };
-	std::vector<std::vector<Particle *> > borderHash_table = std::vector<std::vector<Particle *> >{ Const::borderNH };
+	std::vector<Particle *> borderParticles = std::vector<Particle *>{ Const::DDD ? 13530 : Const::borderParticleNum };
+	std::vector<std::vector<Particle *> > borderHash_table = std::vector<std::vector<Particle *> >{ Const::DDD ? 27061 : Const::borderNH };
 
 	Particles() {}
 

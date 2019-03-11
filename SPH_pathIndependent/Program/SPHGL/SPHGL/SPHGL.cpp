@@ -357,12 +357,13 @@ void display() {
 			DrawCircle(r.x, r.y, radius, 7);
 	}
 
-	
-	glColor3f(0.0f, 1.0f, 0.0f);
-	const std::vector<Particle *> border = sim.getBorderParticles();
-	for (auto p : border) {
-		Vec3 r = p->pos;
-		DrawCircle(r.x, r.y, radius, 7);
+	if (!Const::DDD) {
+		glColor3f(0.0f, 1.0f, 0.0f);
+		const std::vector<Particle *> border = sim.getBorderParticles();
+		for (auto p : border) {
+			Vec3 r = p->pos;
+			DrawCircle(r.x, r.y, radius, 7);
+		}
 	}
 	/*
 	

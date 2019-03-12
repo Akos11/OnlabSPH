@@ -59,6 +59,7 @@ struct Particles {
 	void initRnd();
 	void init(); 
 	void initBorder();
+	void initBorderBox();
 
 	void insertParticle(Particle * p);
 	void insertBorderParticle(Particle * p);
@@ -69,37 +70,48 @@ struct Particles {
 	void updateSpatialHashing();
 };
 
-struct Box {
+struct Boundary {
+	virtual float F(const Vec3& x) = 0;
+	virtual Vec3 getContactPoint(const Vec3& x) = 0;
+	virtual float getDepth(const Vec3& x) = 0;
+	virtual Vec3 getSurfaceNormal(const Vec3& x) = 0;
+	virtual Vec3 velAfterCollision(const Vec3& vel, const Vec3& n, float depth) = 0;
+	virtual Vec3 getNormal(const Vec3& x) = 0;
+};
+
+struct Box : public Boundary {
 	Vec3 c;
 	float width; //x
 	float height; //y
 	float depth; //z
 	Vec3 ext;
 
-	Box(Vec3 c = Vec3{}, float width = 0.9f, float height = 0.9f, float depth = 0)
+	Box(Vec3 c = Vec3{}, float width = 0.7f, float height = 0.7f, float depth = 0)
 		: c{ c }, width{ width }, height{ height }, depth{ depth } {
 		ext = Vec3{ width, height, depth };
 	}
 
-	Vec3 xToLocal(Vec3 x);
-	Vec3 getContactPoint(Vec3 x);
-	float F(Vec3 x);
-	float getDepth(Vec3 x);
-	Vec3 getSurfaceNormal(Vec3 x);
-	Vec3 velAfterCollision(const Vec3& vel, const Vec3& n, float depth);
+	Vec3 xToLocal(const Vec3& x);
+	virtual Vec3 getContactPoint(const Vec3& x);
+	virtual float F(const Vec3& x);
+	virtual float getDepth(const Vec3& x);
+	virtual Vec3 getSurfaceNormal(const Vec3& x);
+	virtual Vec3 velAfterCollision(const Vec3& vel, const Vec3& n, float depth);
+	virtual Vec3 getNormal(const Vec3& x);
 };
 
-struct Sphere {
+struct Sphere : public Boundary {
 	Vec3 c;
 	float r;
 
 	Sphere(Vec3 c = Vec3{}, float r = Const::borderR) : c {c}, r{r} {}
 
-	float F(const Vec3& x);
-	Vec3 getContactPoint(const Vec3& x);
-	float getDepth(const Vec3& x);
-	Vec3 getSurfaceNormal(const Vec3& x);
-	Vec3 velAfterCollision(const Vec3& vel, const Vec3& n, float depth);
+	virtual float F(const Vec3& x);
+	virtual Vec3 getContactPoint(const Vec3& x);
+	virtual float getDepth(const Vec3& x);
+	virtual Vec3 getSurfaceNormal(const Vec3& x);
+	virtual Vec3 velAfterCollision(const Vec3& vel, const Vec3& n, float depth);
+	virtual Vec3 getNormal(const Vec3& x);
 };
 
 struct LeapFrogIntegrator {

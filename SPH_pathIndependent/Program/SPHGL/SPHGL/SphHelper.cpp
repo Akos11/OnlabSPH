@@ -126,6 +126,73 @@ void Particles::initBorder() {
 	*/
 }
 
+void Particles::initBorderBox() {
+	float w = 1.4f;
+	float h = 1.4f;
+
+	int numPerSide = Const::borderParticleNum / 4;
+
+	float step = Const::h/3;
+
+	int n = 0;
+	for (int i = 0; i < 4; ++i) {
+		if (i == 0) {
+			for (int j = 0; j < numPerSide; ++j) {
+				float x = w / 2;
+				float y = (j * step) - (h / 2);
+
+				Particle * p = new Particle{ Vec3{x+0.0f, y, 0.0f} };
+				borderParticles[n] = p;
+				insertBorderParticle(p);
+				n++;
+			}
+			
+		}
+		else if (i == 1) {
+			for (int j = 0; j < numPerSide; ++j) {
+				float x = -w / 2;
+				float y = (j * step) - (h / 2);
+
+				Particle * p = new Particle{ Vec3{x+0.0f, y, 0.0f} };
+				borderParticles[n] = p;
+				insertBorderParticle(p);
+				n++;
+			}
+			
+		}
+		if (i == 2) {
+			for (int j = 0; j < numPerSide; ++j) {
+				float y = h / 2;
+				float x = (j * step) - (w / 2);
+
+				Particle * p = new Particle{ Vec3{x+0.0f, y, 0.0f} };
+				borderParticles[n] = p;
+				insertBorderParticle(p);
+				n++;
+			}
+			
+		}
+		if (i == 3) {
+			for (int j = 0; j < numPerSide; ++j) {
+				float y = -h / 2;
+				float x = -((j * step) - (w / 2));
+
+				Particle * p = new Particle{ Vec3{x+0.0f, y, 0.0f} };
+				borderParticles[n] = p;
+				insertBorderParticle(p);
+				n++;
+			}
+			
+		}
+	}
+	borderParticles[n - 1] = new Particle{ Vec3{-0.68f, -0.7f, 0.0f} };
+	insertBorderParticle(borderParticles[n - 1]);
+	borderParticles[n] = new Particle{ Vec3{-0.67f, -0.7f, 0.0f} };
+	insertBorderParticle(borderParticles[n]);
+
+	std::cout << n << " " << Const::borderParticleNum;
+}
+
 void Particles::insertParticle(Particle * p) {
 	int hashIndex = spatialHash3D(p);
 
@@ -250,42 +317,66 @@ void Particles::updateSpatialHashing() {
 
 ////Box
 
-Vec3 Box::xToLocal(Vec3 x) {
+Vec3 Box::xToLocal(const Vec3& x) {
 	return x - c;
 }
 
-Vec3 Box::getContactPoint(Vec3 x) {
-	Vec3 maxExtXoc = callFuncForComponents(std::fmaxf, -ext, xToLocal(x));
+Vec3 Box::getContactPoint(const Vec3& x) {
+	Vec3 maxExtXoc = callFuncForComponents(std::fmaxf, -ext, x);
 
-	return callFuncForComponents(std::fminf, ext, maxExtXoc) + c;
+	return callFuncForComponents(std::fminf, ext, maxExtXoc);
 }
 
-float Box::F(Vec3 x) {
-	Vec3 xLocMinusExt = xToLocal(x).callFuncForComponents(std::fabsf) - ext;
+float Box::F(const Vec3& x) {
+	Vec3 X = x;
+	Vec3 xMinusExt = X.callFuncForComponents(std::fabsf) - ext;
 
-	return xLocMinusExt.getMaxComponent();
+	return xMinusExt.getMaxComponent();
 }
 
-float Box::getDepth(Vec3 x) {
+float Box::getDepth(const Vec3& x) {
 	return (getContactPoint(x) - x).len();
 }
 
-Vec3 Box::getSurfaceNormal(Vec3 x) {
-	Vec3 notUnitSurfNorm = ((getContactPoint(x) - c) - xToLocal(x)).callFuncForComponents(sgn<float>);
+Vec3 Box::getSurfaceNormal(const Vec3& x) {
+	/*Vec3 notUnitSurfNorm = (getContactPoint(x) - x).callFuncForComponents(sgn<float>);
 
 	float len = notUnitSurfNorm.len();
 
 	if (len == 0)
 		len = 0.00001f;
 
-	return notUnitSurfNorm / len;
+	return notUnitSurfNorm / len; */
+
+	Vec3 norm = Vec3{};
+	if (fabs(x.x) > ext.x - 0.01)
+		norm.x = -sgn<float>(x.x);
+	if (fabs(x.y) > ext.y - 0.01)
+		norm.y = -sgn<float>(x.y);
+
+	if (norm.len() > 1)
+		norm = norm/norm.len();
+
+	return norm;
 }
 
 Vec3 Box::velAfterCollision(const Vec3& vel, const Vec3& n, float depth) {
 	float coef = 1 + Const::cr * (depth / (Const::dt*vel.len()));
 	float udotn = vel.dot(n);
 	
-	return vel - coef * udotn * n;
+	return vel - 1 * udotn * n;
+}
+
+Vec3 Box::getNormal(const Vec3& x) {
+	Vec3 norm = Vec3{};
+	if (fabs(x.x) > ext.x - 0.01)
+		norm.x = sgn<float>(x.x);
+	if (fabs(x.y) > ext.y - 0.01)
+		norm.y = sgn<float>(x.y);
+
+	if (norm.len() > 1)
+		norm = norm/norm.len();
+	return norm;
 }
 ////END OF Box
 
@@ -318,6 +409,10 @@ Vec3 Sphere::velAfterCollision(const Vec3& vel, const Vec3& n, float depth) {
 	float udotn = vel.dot(n);
 	
 	return vel - 1.0f * udotn * n;
+}
+
+Vec3 Sphere::getNormal(const Vec3& x) {
+	return (x - c) / (x - c).len();
 }
 
 ////END OF Sphere

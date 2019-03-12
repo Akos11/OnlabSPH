@@ -32,6 +32,7 @@ static unsigned int genNextPrime(int n) {
 
 namespace Const {
 	const bool DDD = false;
+	const bool box = false;
 
 	const double PI = 3.14159265358979323846;
 	
@@ -78,7 +79,8 @@ namespace Const {
 
 	const float h = cbrtf((3 * 0.1*x) / (4 * PI*particleNum));
 
-	const unsigned int borderParticleNum = (2 * borderR*PI) / (h / 3);
+//	const unsigned int borderParticleNum = (2 * borderR*PI) / (h / 3);
+	const unsigned int borderParticleNum = box ? (4 * 1.4) / (h / 3) : (2 * borderR*PI) / (h / 3);
 	const unsigned int borderNH = genNextPrime(2*borderParticleNum);		//263, 397, 541
 	//const float gridMin = -1;
 	//const float gridMax = 1;

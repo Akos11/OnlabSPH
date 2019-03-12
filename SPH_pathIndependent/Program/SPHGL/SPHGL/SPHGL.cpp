@@ -24,7 +24,8 @@ class SPH_Simulator {
 
 	Particles particles;
 //	Box sphere;
-	Sphere sphere;
+//	Sphere boundary;
+	Boundary * boundary;
 	LeapFrogIntegrator integrator;
 
 
@@ -173,12 +174,15 @@ class SPH_Simulator {
 			Particle * p = particles.particles[i];
 
 			//float boundaryBoxF = boundingBox.F(p->pos);
-			float sphereF = sphere.F(p->pos);
+			float boundaryF = boundary->F(p->pos);
 
-			if (sphereF > 0.0f) {
-				Vec3 contactPoint = sphere.getContactPoint(p->pos);
+			if (boundaryF > 0.0f) {
+				Vec3 contactPoint = boundary->getContactPoint(p->pos);
 				p->pos = contactPoint;// -0.01f * (contactPoint / contactPoint.len());// -randFloatBtw(0.0f, 0.01) * (contactPoint / contactPoint.len());
-				p->currVel = sphere.velAfterCollision(p->currVel, sphere.getSurfaceNormal(p->pos), sphere.getDepth(p->pos));
+				p->currVel = boundary->velAfterCollision(p->currVel, boundary->getSurfaceNormal(p->pos), boundary->getDepth(p->pos));
+
+				//std::cout << contactPoint;
+				//std::cout << boundary->getSurfaceNormal(p->pos) << std::endl;
 			}
 
 			p->currVel = p->getVelocityAtT();
@@ -193,7 +197,8 @@ class SPH_Simulator {
 			Vec3 Fak = Vec3{};
 			for (auto k : borderNeighbors) {
 				Vec3 xak = (k->pos) - (p->pos);
-				Vec3 surfNorm = k->pos / k->pos.len();
+				//Vec3 surfNorm = k->pos / k->pos.len();
+				Vec3 surfNorm = boundary->getNormal(Const::box ? p->pos : k->pos);
 
 				float y = xak.dot(surfNorm);
 				float x = sqrt(xak.len() * xak.len() - y*y);
@@ -211,13 +216,20 @@ public:
 
 	void init() {
 		particles = Particles{};
-		//boundingBox = Box{};
-		sphere = Sphere{};
-//		sphere = Box{};
+//		boundary = new Sphere{};
+		if (Const::box)
+			boundary = new Box{};
+		else
+			boundary = new Sphere{};
+
 		integrator = LeapFrogIntegrator{};
 
 		particles.init();
-		particles.initBorder();
+
+		if (Const::box)
+			particles.initBorderBox();
+		else
+			particles.initBorder();
 	}
 
 	void simulationStep() {
@@ -260,6 +272,8 @@ public:
 		for (int i = 0; i < Const::borderParticleNum; ++i) {
 			delete particles.borderParticles[i];
 		}
+
+		delete boundary;
 	}
 
 };
@@ -286,7 +300,7 @@ void initOpenGL() {
 		}
 	}
 
-	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+	glClearColor(0.3f, 0.3f, 0.3f, 1.0f);
 }
 
 void DrawCircle(float cx, float cy, float r, int num_segments, Vec3* velocity = NULL, Vec3* color = NULL)
@@ -334,9 +348,9 @@ void display() {
 
 //	simulationStep();
 
-	glColor3f(0.5f, 0.5f, 0.5f);
+	//glColor3f(0.5f, 0.5f, 0.5f);
 
-	DrawCircle(0, 0, 0.8f, 60);
+	//DrawCircle(0, 0, 0.8f, 60);
 
 	glColor3f(0.17f, 0.4f, 0.6f);
 	//visualizationStep();

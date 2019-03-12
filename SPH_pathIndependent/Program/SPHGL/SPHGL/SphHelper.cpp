@@ -76,6 +76,8 @@ void Particles::init() {
 			insertParticle(p);
 		}
 	}
+
+	std::cout << "nH: " << Const::nH << std::endl;
 }
 
 void Particles::initBorder() {
@@ -93,7 +95,7 @@ void Particles::initBorder() {
 			//num = i;
 		}
 
-		//std::cout << num;
+		std::cout << "Border Particle Num: " << Const::borderParticleNum << " borderNh: " << Const::borderNH << std::endl;
 	}
 	else {
 
@@ -414,3 +416,5 @@ float Xsi(float a) {
 float B(float x, float y) {
 	return Gamma(y) * Xsi(x);
 }
+
+

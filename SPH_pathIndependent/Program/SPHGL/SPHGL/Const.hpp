@@ -4,6 +4,32 @@
 #include "Vec.hpp"
 #include <cmath>
 
+static bool isPrime(int n) {
+    if (n <= 3)
+        return n > 1;
+    else if( ((n%2)==0) || ((n%3)==0) )
+        return false;
+
+    int i = 5;
+    while (i * i <= n) {
+        if ( ((n%i)==0) || ((n%(i+2))==0) )
+            return false;
+        i = i + 6;
+    }
+    return true;
+}
+
+static unsigned int genNextPrime(int n) {
+    unsigned int num = n;
+    bool isprime = isPrime(num);
+    while(!isprime) {
+        num++;
+        isprime = isPrime(num);
+    }
+
+    return num;
+}
+
 namespace Const {
 	const bool DDD = false;
 
@@ -34,7 +60,6 @@ namespace Const {
 //	const unsigned int particleNum = 4900; //At kell irni a particles initet is
 //	const unsigned int nH = 9803;
 
-	const unsigned int nH = 2179;	//33*33
 //	const unsigned int nH = 883;	//21*21
 //	const unsigned int nH = 4051;	//45*45
 
@@ -49,10 +74,12 @@ namespace Const {
 
 	const unsigned int particleNum = partNumX * partNumY;
 
+	const unsigned int nH = genNextPrime(2*particleNum);//2179;	//33*33
+
 	const float h = cbrtf((3 * 0.1*x) / (4 * PI*particleNum));
 
 	const unsigned int borderParticleNum = (2 * borderR*PI) / (h / 3);
-	const unsigned int borderNH = 397;		//263, 397, 541
+	const unsigned int borderNH = genNextPrime(2*borderParticleNum);		//263, 397, 541
 	//const float gridMin = -1;
 	//const float gridMax = 1;
 }

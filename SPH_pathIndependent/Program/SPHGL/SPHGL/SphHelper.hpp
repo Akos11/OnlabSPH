@@ -121,7 +121,6 @@ float W_visc_lapl(const Vec3& r, float h);
 
 float B(float x, float y);
 
-
 #endif // !SPHHELPER_HPP
 
 

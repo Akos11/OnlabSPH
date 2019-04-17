@@ -301,6 +301,7 @@ void initOpenGL() {
 	}
 
 	glClearColor(0.3f, 0.3f, 0.3f, 1.0f);
+	//gluLookAt(1.0, 1.0, -1.0, 0, 0, 0, 1, 0, 0);
 }
 
 void DrawCircle(float cx, float cy, float r, int num_segments, Vec3* velocity = NULL, Vec3* color = NULL)
@@ -341,11 +342,21 @@ void DrawCircle(float cx, float cy, float r, int num_segments, Vec3* velocity = 
 	}
 	glEnd();
 }
+///uj3d
+double eyeX = 1.0;
+double eyeY = 1.0;
+double eyeZ = 1.0;
+///uj3d
 
 void display() {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glDisable(GL_DEPTH_TEST);
+	///uj3d
+	glLoadIdentity();
+	gluPerspective(45.0f, 1.0, 0.01, 200.0);
+	///uj3d
 
+	//glViewport(0, 0, 1000, 1000);
 //	simulationStep();
 
 	//glColor3f(0.5f, 0.5f, 0.5f);
@@ -360,29 +371,46 @@ void display() {
 //	}
 
 	sim.simulationStep();
-
-	glColor3f(0.0f, 0.0f, 1.0f);
-	const std::vector<Particle *> prtcls = sim.getParticles();
-	for (auto p : prtcls) {
-		Vec3 r = p->pos;
-		float v = p->currVel.len();
-		//glColor3f(v, v, 1.0f);
-		if (mode == 1)
-			DrawCircle(r.x, r.y, radius, 7,&(p->currVel), &(p->color));
-		else if (mode == 2)
-			DrawCircle(r.x, r.y, radius, 7, &(p->currVel));
-		else
-			DrawCircle(r.x, r.y, radius, 7);
-	}
+	///uj3d
+	gluLookAt(eyeX, eyeY, eyeZ, 0, 0, 0.0, 0.0, 1.0, 0.0);
+	///uj3d
 
 	if (!Const::DDD) {
 		glColor3f(0.0f, 1.0f, 0.0f);
 		const std::vector<Particle *> border = sim.getBorderParticles();
 		for (auto p : border) {
 			Vec3 r = p->pos;
-			DrawCircle(r.x, r.y, radius, 7);
+			//DrawCircle(r.x, r.y, radius, 7);
+			///uj3d
+			glTranslatef(r.x, r.y,0);
+			glutWireSphere(radius, 20, 10);
+			glTranslatef(-r.x, -r.y, 0);
+			///uj3d
 		}
 	}
+	glColor3f(0.0f, 0.0f, 1.0f);
+
+	const std::vector<Particle *> prtcls = sim.getParticles();
+	for (auto p : prtcls) {
+		Vec3 r = p->pos;
+		float v = p->currVel.len();
+		//glColor3f(v, v, 1.0f);
+	/*	if (mode == 1)
+			DrawCircle(r.x, r.y, radius, 7,&(p->currVel), &(p->color));
+		else if (mode == 2)
+			DrawCircle(r.x, r.y, radius, 7, &(p->currVel));
+		else
+			DrawCircle(r.x, r.y, radius, 7);*/
+		///uj3d
+		glTranslatef(r.x, r.y, r.z);
+		glutWireSphere(radius, 20, 10);
+		glTranslatef(-r.x, -r.y, -r.z);
+		///uj3d
+
+	}
+	
+	
+
 	/*
 	
 	glColor3f(1.0f, 0.0f, 0.0f);
@@ -418,6 +446,18 @@ void keyUp(unsigned char key, int x, int y) {
 	
 	case 'v':
 		mode = (mode+1) % 3;
+		break;
+	case 'w':
+		eyeZ += 0.05;
+		break;
+	case 's':
+		eyeZ -= 0.05;
+		break;
+	case 'd':
+		eyeX += 0.05;
+		break;
+	case 'a':
+		eyeX -= 0.05;
 		break;
 	}
 /*

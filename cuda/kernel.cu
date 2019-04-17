@@ -7,6 +7,8 @@ namespace DeviceConst {
 	__constant__ int p2 = 19349663;
 	__constant__ int p3 = 83492791;
 
+	__constant__ float dt = 0.01f;
+
 	__constant__ float g = -9.82f;
 
 	__constant__ float m = 0.02f;
@@ -17,11 +19,18 @@ namespace DeviceConst {
 	__constant__ float rho0 = 998.29f;
 	__constant__ float surfTension = 0.0728f;
 	__constant__ float threshold = 7.065f;
+	__constant__ float cr = 0.2f;
 }
 
 //DEVICE FUNCTIONS
 
 namespace device {
+
+	__device__
+	int sgn(float val) {
+		return (0.0f < val) - (val < 0.0f);
+	}
+
 	__device__
 		int spatialHash3D(float3 pos, float h, unsigned int nH) {
 		long long xor2 = static_cast<long long>(static_cast<long long>(pos.x / h) * DeviceConst::p1)
@@ -32,7 +41,7 @@ namespace device {
 	}
 
 	__device__
-		float W_def(float3 r, float h) {
+	float W_def(float3 r, float h) {
 		float coef = (315) / (64 * DeviceConst::PI * powf(h, 9));
 
 		float rlen = length(r);
@@ -168,7 +177,7 @@ namespace device {
 						contains = 1;
 				}
 
-				if (contains == 0) {
+				if (contains == 0 && hashVals_num < 100) {
 					//hashVals_num = device::vector::push_back(&hashVals, hashVals_num, xyzHash);
 					hashVals[hashVals_num++] = xyzHash;
 				}
@@ -183,7 +192,7 @@ namespace device {
 			for (int l = 0; l < hashElemSizeBuffer[hashVal]; ++l) {
 				int lidx = L[l];
 
-				if (length(rq - positionBuffer[lidx]) <= h) {
+				if (length(rq - positionBuffer[lidx]) <= h && neighbors_num < 100) {
 					//neighbors_num = device::vector::push_back(neighbors, neighbors_num, lidx);
 					neighbors[neighbors_num++] = lidx;
 				}
@@ -200,9 +209,10 @@ namespace device {
 
 		for (int i = 0; i < neighbor_num; ++i) {
 			int nidx = neighbors[i];
-			float3 rj = positionBuffer[nidx];	
+			float3 rj = positionBuffer[nidx];
 			rho += DeviceConst::m * W_def(r - rj, h);
 		}
+
 		return rho;
 	}
 
@@ -236,8 +246,8 @@ namespace device {
 
 	__device__
 	float3 calcViscosityForce(int idx, float h, int* neighbors, int neighbor_num,
-							float3* positionBuffer, float* densityBuffer, float3* velocityBuffer0, float3* velocityBuffer1) {
-		float3 vel = (velocityBuffer0[idx] + velocityBuffer1[idx]) / 2.0f;
+							float3* positionBuffer, float* densityBuffer, float3* velocityBufferPrev, float3* velocityBufferCurr) {
+		float3 vel = (velocityBufferPrev[idx] + velocityBufferCurr[idx]) / 2.0f;
 		float3 r = positionBuffer[idx];
 
 		float3 Fviscosity = make_float3(0.0f, 0.0f, 0.0f);
@@ -245,7 +255,7 @@ namespace device {
 			int nidx = neighbors[i];
 			if (idx != nidx) {
 				float3 rj = positionBuffer[nidx];
-				float3 velj = (velocityBuffer0[nidx] + velocityBuffer1[nidx]) / 2.0f;
+				float3 velj = (velocityBufferPrev[nidx] + velocityBufferCurr[nidx]) / 2.0f;
 				float rhoj = densityBuffer[nidx];
 
 				//Fviscosity += (Const::particleM / rhoj) * W_visc_lapl(r - rj, Const::h) * (velj - vel);
@@ -258,11 +268,11 @@ namespace device {
 
 	__device__
 	float3 calcInternalForces(int idx, float h, int* neighbors, int neighbor_num,
-		float3* positionBuffer, float* pressureBuffer, float* densityBuffer, float3* velocityBuffer0, float3* velocityBuffer1)
+		float3* positionBuffer, float* pressureBuffer, float* densityBuffer, float3* velocityBufferPrev, float3* velocityBufferCurr)
 	{
 		float3 Fint = make_float3(0.0f, 0.0f, 0.0f);
 		Fint += calcPressureForce(idx, h, neighbors, neighbor_num, positionBuffer, pressureBuffer, densityBuffer);
-		Fint += calcViscosityForce(idx, h, neighbors, neighbor_num, positionBuffer, densityBuffer, velocityBuffer0, velocityBuffer1);
+		Fint += calcViscosityForce(idx, h, neighbors, neighbor_num, positionBuffer, densityBuffer, velocityBufferPrev, velocityBufferCurr);
 
 		return Fint;
 	}
@@ -324,6 +334,47 @@ namespace device {
 		return Fgravity + Fsurface;
 	}
 
+	__device__
+	float calcBoundaryF(float3 x) {
+		float3 c = make_float3(0.0f, 0.0f, 0.0f);
+		float r = 0.8f;
+
+		float xMinusc = length(x - c);
+		return xMinusc*xMinusc - r*r;
+	}
+
+	__device__
+	float3 getBoundaryContactPoint(float3 x) {
+		float3 c = make_float3(0.0f, 0.0f, 0.0f);
+		float r = 0.8f;
+
+		return c + r * ((x - c) / length(x - c));
+	}
+
+	__device__
+	float getBoundaryDepth(float3 x) {
+		float3 c = make_float3(0.0f, 0.0f, 0.0f);
+		float r = 0.8f;
+
+		return fabsf(length(c - x) - r);
+	}
+
+	__device__
+	float3 getBoundarySurfaceNormal(float3 x) {
+		float3 c = make_float3(0.0f, 0.0f, 0.0f);
+
+		float fx = calcBoundaryF(x);
+
+		return sgn(fx) * ((c - x) / length(c - x));
+	}
+
+	__device__
+	float3 getVelAfterCollision(float3 vel, float3 n, float depth) {
+		float coef = 1 + DeviceConst::cr * (depth / (DeviceConst::dt * length(vel)));
+		float udotn = dot(vel, n);
+
+		return vel - coef * udotn * n;
+	}
 	
 }
 
@@ -334,12 +385,17 @@ namespace device {
 __global__
 void initParticles(const int gridResolution,
 				float h,
-				float3* positionBuffer,
+				float3* positionBufferIn,
+				float3* positionBufferOut,
 				float* pressureBuffer,
-				float* densityBuffer,
-				float3* velocityBuffer0,
-				float3* velocityBuffer1,
-				float3* forceBuffer)
+				float* densityBufferIn,
+				float* densityBufferOut,
+				float3* velocityBufferPrevIn,
+				float3* velocityBufferPrevOut,
+				float3* velocityBufferCurrIn,
+				float3* velocityBufferCurrOut,
+				float3* forceBufferIn,
+				float3* forceBufferOut)
 {
 	int2 id = make_int2(blockIdx.x * blockDim.x + threadIdx.x, blockIdx.y * blockDim.y + threadIdx.y);
 
@@ -351,12 +407,17 @@ void initParticles(const int gridResolution,
 		float x = (h / 3)* (id.x - ((gridResolution - 1) / 2));
 		float y = (h / 3) * (id.y - ((gridResolution - 1) / 2));
 
-		positionBuffer[idx] = make_float3(x, y, 0.0f);
+		positionBufferIn[idx] = make_float3(x, y, 0.0f);
+		positionBufferOut[idx] = make_float3(x, y, 0.0f);
 		pressureBuffer[idx] = DeviceConst::p;
-		densityBuffer[idx] = DeviceConst::rho0;
-		velocityBuffer0[idx] = make_float3(0.0f, 0.0f, 0.0f);
-		velocityBuffer1[idx] = make_float3(0.0f, 0.0f, 0.0f);
-		forceBuffer[idx] = make_float3(0.0f, 0.0f, 0.0f);
+		densityBufferIn[idx] = DeviceConst::rho0;
+		densityBufferOut[idx] = DeviceConst::rho0;
+		velocityBufferPrevIn[idx] = make_float3(0.0f, 0.0f, 0.0f);
+		velocityBufferPrevOut[idx] = make_float3(0.0f, 0.0f, 0.0f);
+		velocityBufferCurrIn[idx] = make_float3(0.0f, 0.0f, 0.0f);
+		velocityBufferCurrOut[idx] = make_float3(0.0f, 0.0f, 0.0f);
+		forceBufferIn[idx] = make_float3(0.0f, 0.0f, 0.0f);
+		forceBufferOut[idx] = make_float3(0.0f, 0.0f, 0.0f);
 	}
 }
 
@@ -401,7 +462,8 @@ void calcDensityAndPressure(int gridResolution,
 					float nH,
 					float3* positionBuffer,
 					float* pressureBuffer,
-					float* densityBuffer,
+					float* densityBufferIn,
+					float* densityBufferOut,
 					int* hashElemSizeBuffer,
 					int** hashBuffer)
 {
@@ -417,9 +479,9 @@ void calcDensityAndPressure(int gridResolution,
 		neighbor_num = device::spatialQuery(neighbors, idx, h, nH, positionBuffer, hashElemSizeBuffer, hashBuffer);
 
 		float rho = device::calcMassDensity(idx, h, neighbors, neighbor_num, positionBuffer);
-		float p = device::calcPressure(idx, densityBuffer);
+		float p = device::calcPressure(idx, densityBufferIn);
 
-		densityBuffer[idx] = rho;
+		densityBufferOut[idx] = rho;
 		pressureBuffer[idx] = p;
 
 		//printf("ok\n");
@@ -433,8 +495,8 @@ void calcForces(int gridResolution,
 				float3* positionBuffer,
 				float* pressureBuffer,
 				float* densityBuffer,
-				float3* velocityBuffer0,
-				float3* velocityBuffer1,
+				float3* velocityBufferPrev,
+				float3* velocityBufferCurr,
 				float3* forceBuffer,
 				int* hashElemSizeBuffer,
 				int** hashBuffer)
@@ -450,7 +512,7 @@ void calcForces(int gridResolution,
 		int neighbor_num = 0;
 		neighbor_num = device::spatialQuery(neighbors, idx, h, nH, positionBuffer, hashElemSizeBuffer, hashBuffer);
 
-		float3 internalF = device::calcInternalForces(idx, h, neighbors, neighbor_num, positionBuffer, pressureBuffer, densityBuffer, velocityBuffer0, velocityBuffer1);
+		float3 internalF = device::calcInternalForces(idx, h, neighbors, neighbor_num, positionBuffer, pressureBuffer, densityBuffer, velocityBufferPrev, velocityBufferCurr);
 		float3 externalF = device::calcExternalForces(idx, h, neighbors, neighbor_num, positionBuffer, densityBuffer);
 
 		forceBuffer[idx] = internalF + externalF;
@@ -459,19 +521,101 @@ void calcForces(int gridResolution,
 	}
 }
 
+__global__
+void stepTimeIntegrator(int gridResolution,
+						float3* positionBufferIn,
+						float3* positionBufferOut,
+						float* densityBuffer,
+						float3* velocityBufferPrevIn,
+						float3* velocityBufferPrevOut,
+						float3* velocityBufferCurrIn,
+						float3* velocityBufferCurrOut,
+						float3* forceBuffer)
+{
+	int2 id = make_int2(blockIdx.x * blockDim.x + threadIdx.x, blockIdx.y * blockDim.y + threadIdx.y);
+
+	if (id.x >= 0 && id.x < gridResolution &&
+		id.y >= 0 && id.y < gridResolution) {
+
+		int idx = id.x + id.y * gridResolution;
+
+		float3 prevPos = positionBufferIn[idx];
+		float3 prevVel = velocityBufferCurrIn[idx];
+
+		velocityBufferPrevOut[idx] = prevVel;
+
+		float3 F = forceBuffer[idx];
+		//printf("%f %f\n", F.x, F.y);
+		float rho = densityBuffer[idx];
+
+		float3 currVel = prevVel + DeviceConst::dt *(F / rho);
+		float3 currPos = prevPos + DeviceConst::dt * currVel;
+
+		velocityBufferCurrOut[idx] = currVel;
+		positionBufferOut[idx] = currPos;
+
+		/*if (idx == 135)
+			printf("%f %f\n", prevVel.x, prevVel.y);*/
+	}
+}
+
+__global__
+void handleCollisions(int gridResolution,
+					float3* positionBufferIn,
+					float3* positionBufferOut,
+					float3* velocityBufferPrevIn,
+					float3* velocityBufferPrevOut,
+					float3* velocityBufferCurrIn,
+					float3* velocityBufferCurrOut)
+{
+	int2 id = make_int2(blockIdx.x * blockDim.x + threadIdx.x, blockIdx.y * blockDim.y + threadIdx.y);
+
+	if (id.x >= 0 && id.x < gridResolution &&
+		id.y >= 0 && id.y < gridResolution) {
+
+		int idx = id.x + id.y * gridResolution;
+
+		float3 pos = positionBufferIn[idx];
+
+		float boundaryF = device::calcBoundaryF(pos);
+
+		if (boundaryF > 0.0f) {
+			float3 contactPoint = device::getBoundaryContactPoint(pos);
+			float3 velBeforeCollision = velocityBufferCurrIn[idx];
+
+			float3 surfaceNormal = device::getBoundarySurfaceNormal(contactPoint);
+			float depth = device::getBoundaryDepth(pos);	//Sztem ide ez kell es nem a contactPoint
+
+			float3 velAfterCollision = device::getVelAfterCollision(velBeforeCollision, surfaceNormal, depth);
+
+			velocityBufferPrevOut[idx] = velBeforeCollision;
+			velocityBufferCurrOut[idx] = (velBeforeCollision + velAfterCollision) / 2.0f;
+			positionBufferOut[idx] = contactPoint - 0.01f * (contactPoint / length(contactPoint));
+		} else {
+			velocityBufferPrevOut[idx] = velocityBufferPrevIn[idx];
+			velocityBufferCurrOut[idx] = velocityBufferCurrIn[idx];
+			positionBufferOut[idx] = positionBufferIn[idx];
+		}
+	}
+}
+
 //END OF KERNEL FUNCTIONS
 //
 ////BUFFERS
 
-float3* d_positionBuffer;
+int inputPositionBuffer = 0;
+float3* d_positionBuffer[2];
+
 float3* d_spatialTestBuffer;
 
 float* d_pressureBuffer;
 
-float* d_densityBuffer;
+int inputDensityBuffer = 0;
+float* d_densityBuffer[2];
 
 int inputVelocityBuffer = 0;
-float3 * d_velocityBuffer[2];
+float3 * d_velocityBufferPrev[2];
+float3 * d_velocityBufferCurr[2];
 
 int inputForceBuffer = 0;
 float3 * d_forceBuffer[2];
@@ -505,18 +649,22 @@ int spatialHash3D(float3 pos, float h, unsigned int nH) {
 void allocateMemory() {
 	
 	//Position
-	cudaMalloc((void**)&d_positionBuffer, sizeof(float3)*gridResolution*gridResolution);
+	cudaMalloc((void**)&d_positionBuffer[0], sizeof(float3)*gridResolution*gridResolution);
+	cudaMalloc((void**)&d_positionBuffer[1], sizeof(float3)*gridResolution*gridResolution);
 	cudaMalloc((void**)&d_spatialTestBuffer, sizeof(float3)*gridResolution*gridResolution);
 	
 	//Pressure
 	cudaMalloc((void**)&d_pressureBuffer, sizeof(float)*gridResolution*gridResolution);
 
 	//Density
-	cudaMalloc((void**)&d_densityBuffer, sizeof(float)*gridResolution*gridResolution);
+	cudaMalloc((void**)&d_densityBuffer[0], sizeof(float)*gridResolution*gridResolution);
+	cudaMalloc((void**)&d_densityBuffer[1], sizeof(float)*gridResolution*gridResolution);
 
 	//Velocity
-	cudaMalloc((void**)&d_velocityBuffer[0], sizeof(float3)*gridResolution*gridResolution);
-	cudaMalloc((void**)&d_velocityBuffer[1], sizeof(float3)*gridResolution*gridResolution);
+	cudaMalloc((void**)&d_velocityBufferPrev[0], sizeof(float3)*gridResolution*gridResolution);
+	cudaMalloc((void**)&d_velocityBufferPrev[1], sizeof(float3)*gridResolution*gridResolution);
+	cudaMalloc((void**)&d_velocityBufferCurr[0], sizeof(float3)*gridResolution*gridResolution);
+	cudaMalloc((void**)&d_velocityBufferCurr[1], sizeof(float3)*gridResolution*gridResolution);
 
 	//Force
 	cudaMalloc((void**)&d_forceBuffer[0], sizeof(float3)*gridResolution*gridResolution);
@@ -527,10 +675,10 @@ void allocateMemory() {
 	cudaMalloc((void**)&d_hashBuffer, sizeof(int*) * Const::nH);
 }
 
-void initHashBuffer() {
+void updateHashBuffer() {
 	float3* positions = new float3[gridResolution*gridResolution];
 
-	cudaMemcpy(positions, d_positionBuffer, sizeof(float3) * gridResolution * gridResolution, cudaMemcpyDeviceToHost);
+	cudaMemcpy(positions, d_positionBuffer[inputPositionBuffer], sizeof(float3) * gridResolution * gridResolution, cudaMemcpyDeviceToHost);
 
 	std::vector< std::vector<int> > hash_table = std::vector< std::vector<int> >( Const::nH );
 
@@ -588,28 +736,38 @@ void cuda::initSimulation() {
 	initParticles<<<numBlocks, threadsPerBlock>>>(
 		gridResolution,
 		Const::h,
-		d_positionBuffer,
+		d_positionBuffer[0],
+		d_positionBuffer[1],
 		d_pressureBuffer,
-		d_densityBuffer,
-		d_velocityBuffer[0],
-		d_velocityBuffer[1],
-		d_forceBuffer[0]
+		d_densityBuffer[0],
+		d_densityBuffer[1],
+		d_velocityBufferPrev[0],
+		d_velocityBufferPrev[1],
+		d_velocityBufferCurr[0],
+		d_velocityBufferCurr[1],
+		d_forceBuffer[0],
+		d_forceBuffer[1]
 		);
 
-	initHashBuffer();
+	updateHashBuffer();
+
+	errorCheck();
 }
 
 void densityAndPressureStep() {
-	calcDensityAndPressure<<<numBlocks, threadsPerBlock>>>(
+		calcDensityAndPressure <<<numBlocks, threadsPerBlock>>>(
 		gridResolution,
 		Const::h,
 		Const::nH,
-		d_positionBuffer,
+		d_positionBuffer[inputPositionBuffer],
 		d_pressureBuffer,
-		d_densityBuffer,
+		d_densityBuffer[inputDensityBuffer],
+		d_densityBuffer[(inputDensityBuffer + 1) % 2],
 		d_hashElemSizeBuffer,
 		d_hashBuffer
 		);
+
+		inputDensityBuffer = (inputDensityBuffer + 1) % 2;
 
 	errorCheck();
 }
@@ -619,27 +777,69 @@ void forcesStep() {
 		gridResolution,
 		Const::h,
 		Const::nH,
-		d_positionBuffer,
+		d_positionBuffer[inputPositionBuffer],
 		d_pressureBuffer,
-		d_densityBuffer,
-		d_velocityBuffer[0],
-		d_velocityBuffer[1],
-		d_forceBuffer[0],
+		d_densityBuffer[inputDensityBuffer],
+		d_velocityBufferPrev[inputVelocityBuffer],
+		d_velocityBufferCurr[inputVelocityBuffer],
+		d_forceBuffer[inputForceBuffer],
 		d_hashElemSizeBuffer,
 		d_hashBuffer
 		);
 
+	inputForceBuffer = (inputForceBuffer + 1) % 2;
+
 	errorCheck();
 }
 
+void timeStep() {
+	stepTimeIntegrator<<<numBlocks, threadsPerBlock>>>(
+		gridResolution,
+		d_positionBuffer[inputPositionBuffer],
+		d_positionBuffer[(inputPositionBuffer + 1) % 2],
+		d_densityBuffer[inputDensityBuffer],
+		d_velocityBufferPrev[inputVelocityBuffer],
+		d_velocityBufferPrev[(inputVelocityBuffer + 1) % 2],
+		d_velocityBufferCurr[inputVelocityBuffer],
+		d_velocityBufferCurr[(inputVelocityBuffer + 1) % 2],
+		d_forceBuffer[inputForceBuffer]
+		);
+
+	inputPositionBuffer = (inputPositionBuffer + 1) % 2;
+	inputVelocityBuffer = (inputVelocityBuffer + 1) % 2;
+
+	errorCheck();
+}
+
+void collisionHandlingStep() {
+	handleCollisions<<<numBlocks, threadsPerBlock>>>(
+		gridResolution,
+		d_positionBuffer[inputPositionBuffer],
+		d_positionBuffer[(inputPositionBuffer + 1) % 2],
+		d_velocityBufferPrev[inputVelocityBuffer],
+		d_velocityBufferPrev[(inputVelocityBuffer + 1) % 2],
+		d_velocityBufferCurr[inputVelocityBuffer],
+		d_velocityBufferCurr[(inputVelocityBuffer + 1) % 2]
+		);
+
+	inputPositionBuffer = (inputPositionBuffer + 1) % 2;
+	inputVelocityBuffer = (inputVelocityBuffer + 1) % 2;
+
+	errorCheck();
+}
 
 void cuda::simulationStep() {
 	densityAndPressureStep();
 	forcesStep();
+	timeStep();
+
+	collisionHandlingStep();
+
+	updateHashBuffer();
 }
 
 void cuda::retrievePositionData(float3* positionBufferCPU) {
-	cudaMemcpy(positionBufferCPU, d_positionBuffer, sizeof(float3) * gridResolution * gridResolution, cudaMemcpyDeviceToHost);
+	cudaMemcpy(positionBufferCPU, d_positionBuffer[0], sizeof(float3) * gridResolution * gridResolution, cudaMemcpyDeviceToHost);
 }
 
 void cuda::testSpatialQuery(float3* positionBufferCPU, int pn) {
@@ -648,7 +848,7 @@ void cuda::testSpatialQuery(float3* positionBufferCPU, int pn) {
 		Const::h,
 		Const::nH,
 		pn,
-		d_positionBuffer,
+		d_positionBuffer[inputPositionBuffer],
 		d_hashElemSizeBuffer,
 		d_hashBuffer,
 		d_spatialTestBuffer

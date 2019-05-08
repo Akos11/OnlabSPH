@@ -279,6 +279,73 @@ void initBoundaryParticles() {
 	cudaMemcpy(d_boundaryHashBuffer, boundaryHashBuffer, sizeof(int*) * Const::borderNH, cudaMemcpyHostToDevice);
 }
 
+void initBoundaryParticles3D() {
+	float3* positions = new float3[Const::borderParticleNum];
+
+	float radStep = (2 * Const::PI) / Const::borderParticleNum;
+
+	int bordNum = 0;
+	float hHalf = Const::h / 2;
+	int thetaNum = (2 * Const::PI) / (Const::h / 2);
+	int fiNum = (Const::PI) / (Const::h / 2);
+	for (int t = 0; t < thetaNum; ++t) {
+		for (int f = 0; f < fiNum; ++f) {
+			float x = Const::borderR * cosf(t * hHalf) * sinf(f * hHalf);
+			float y = Const::borderR * sinf(t * hHalf) * sinf(f * hHalf);
+			float z = Const::borderR * cosf(f * hHalf);
+
+			positions[bordNum] = make_float3(x, y, z);
+			
+			bordNum++;
+		}
+	}
+
+	cudaMemcpy(d_boundaryPositionBuffer, positions, sizeof(float3)*Const::borderParticleNum, cudaMemcpyHostToDevice);
+
+	std::vector< std::vector<int> > hash_table = std::vector< std::vector<int> >(Const::borderNH);
+
+	for (int i = 0; i < Const::borderParticleNum; ++i) {
+
+		float3 pos = positions[i];
+		int hashIndex = spatialHash3D(pos, Const::h, Const::borderNH);
+
+		hash_table[hashIndex].push_back(i);
+	}
+
+	int** boundaryHashBuffer = new int*[Const::borderNH];
+	int* boundaryHashElemSizeBuffer = new int[Const::borderNH];
+
+	for (int i = 0; i < hash_table.size(); ++i) {
+		std::vector<int> neighborList = hash_table[i];
+
+		if (neighborList.size() != 0) {
+			boundaryHashElemSizeBuffer[i] = neighborList.size();
+
+			int* tempNeighbors = new int[neighborList.size()];
+
+			for (int j = 0; j < neighborList.size(); ++j) {
+				tempNeighbors[j] = neighborList[j];
+			}
+
+			int* d_tempNeighbors;
+			cudaMalloc((void**)&d_tempNeighbors, sizeof(int) * neighborList.size());
+			cudaMemcpy(d_tempNeighbors, tempNeighbors, sizeof(int) * neighborList.size(), cudaMemcpyHostToDevice);
+
+			boundaryHashBuffer[i] = d_tempNeighbors;
+
+			delete[] tempNeighbors;
+		}
+		else {
+			boundaryHashElemSizeBuffer[i] = 0;
+		}
+	}
+
+	cudaMemcpy(d_boundaryHashElemSizeBuffer, boundaryHashElemSizeBuffer, sizeof(int)*Const::borderNH, cudaMemcpyHostToDevice);
+	cudaMemcpy(d_boundaryHashBuffer, boundaryHashBuffer, sizeof(int*) * Const::borderNH, cudaMemcpyHostToDevice);
+
+	errorCheck();
+}
+
 void cuda::initSimulation() {
 	allocateMemory();
 
@@ -298,7 +365,7 @@ void cuda::initSimulation() {
 		d_forceBuffer[1]
 		);
 
-	initBoundaryParticles();
+	initBoundaryParticles3D();
 
 	updateParallel();
 	//update();

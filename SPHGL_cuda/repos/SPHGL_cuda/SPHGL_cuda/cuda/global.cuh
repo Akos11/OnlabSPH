@@ -260,7 +260,7 @@ namespace Global {
 				//printf("%f %f\n", kPos.x, kPos.y);
 
 				float3 xak = kPos - pPos;
-				float3 surfaceNormal = Device::getBoundarySurfaceNormal(pPos);
+				float3 surfaceNormal = Device::getBoundarySurfaceNormal(kPos);
 
 				float y = dot(xak, surfaceNormal);
 				float x = sqrtf(length(xak) * length(xak) - y * y);
@@ -270,7 +270,7 @@ namespace Global {
 
 			float3 inForce = forceBufferIn[idx];
 
-			forceBufferOut[idx] = inForce + Fak;
+			forceBufferOut[idx] = inForce + 0.01f * Fak;
 		}
 	}
 

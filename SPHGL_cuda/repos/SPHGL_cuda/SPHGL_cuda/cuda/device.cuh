@@ -147,19 +147,21 @@ namespace Device {
 		//int real_size = 0;
 		for (float x = min.x; x <= max.x; x += iter) {
 			for (float y = min.y; y <= max.y; y += iter) {
-				float3 xyz = make_float3(x, y, 0.0f);
+				for (float z = min.z; z <= max.z; z += iter) {
+					float3 xyz = make_float3(x, y, z);
 
-				int xyzHash = Device::spatialHash3D(xyz, h, nH);
+					int xyzHash = Device::spatialHash3D(xyz, h, nH);
 
-				int contains = 0;
-				for (int i = 0; i < hashVals_num; ++i) {
-					if (hashVals[i] == xyzHash)
-						contains = 1;
-				}
+					int contains = 0;
+					for (int i = 0; i < hashVals_num; ++i) {
+						if (hashVals[i] == xyzHash)
+							contains = 1;
+					}
 
-				if (contains == 0 && hashVals_num < 100) {
-					//hashVals_num = device::vector::push_back(&hashVals, hashVals_num, xyzHash);
-					hashVals[hashVals_num++] = xyzHash;
+					if (contains == 0 && hashVals_num < 100) {
+						//hashVals_num = device::vector::push_back(&hashVals, hashVals_num, xyzHash);
+						hashVals[hashVals_num++] = xyzHash;
+					}
 				}
 			}
 		}
@@ -202,19 +204,21 @@ namespace Device {
 		//int real_size = 0;
 		for (float x = min.x; x <= max.x; x += iter) {
 			for (float y = min.y; y <= max.y; y += iter) {
-				float3 xyz = make_float3(x, y, 0.0f);
+				for (float z = min.z; z <= max.z; z += iter) {
+					float3 xyz = make_float3(x, y, z);
 
-				int xyzHash = Device::spatialHash3D(xyz, h, borderNH);
+					int xyzHash = Device::spatialHash3D(xyz, h, borderNH);
 
-				int contains = 0;
-				for (int i = 0; i < hashVals_num; ++i) {
-					if (hashVals[i] == xyzHash)
-						contains = 1;
-				}
+					int contains = 0;
+					for (int i = 0; i < hashVals_num; ++i) {
+						if (hashVals[i] == xyzHash)
+							contains = 1;
+					}
 
-				if (contains == 0 && hashVals_num < 100) {
-					//hashVals_num = device::vector::push_back(&hashVals, hashVals_num, xyzHash);
-					hashVals[hashVals_num++] = xyzHash;
+					if (contains == 0 && hashVals_num < 100) {
+						//hashVals_num = device::vector::push_back(&hashVals, hashVals_num, xyzHash);
+						hashVals[hashVals_num++] = xyzHash;
+					}
 				}
 			}
 		}
@@ -227,9 +231,6 @@ namespace Device {
 			for (int l = 0; l < boundaryHashElemSizeBuffer[hashVal]; ++l) {
 				int lidx = L[l];
 				float3 boundaryPos = boundaryPositionBuffer[lidx];
-
-				if (idx == 234)
-					;// printf("%f %f\n", boundaryPos.x, boundaryPos.y);
 
 				if (length(rq - boundaryPos) <= h && neighbors_num < 100) {
 					//neighbors_num = device::vector::push_back(neighbors, neighbors_num, lidx);

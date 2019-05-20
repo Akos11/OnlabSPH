@@ -26,12 +26,21 @@ namespace Global {
 			id.y >= 0 && id.y < gridResolution) {
 
 			int idx = id.x + id.y * gridResolution;
-
+			int tempidX = id.x % 33;
+			int tempidY = id.y % 33;
+			float x = (h / 3)* (tempidX - ((gridResolution/33 - 1) / 2))* 1.2f;
+			float y = (h / 3) * (tempidY - ((gridResolution/33 - 1) / 2)) * 1.2f;
+			//négyzetbe inicializálás
+			/*
 			float x = (h / 3)* (id.x - ((gridResolution - 1) / 2));
 			float y = (h / 3) * (id.y - ((gridResolution - 1) / 2));
+			*/
 
-			positionBufferIn[idx] = make_float3(x, y, 0.0f);
-			positionBufferOut[idx] = make_float3(x, y, 0.0f);
+			float z = (h / 3) * ((id.x / 33) + (id.y / 33) * (gridResolution / 33))*3.5f;// +0.2f;
+
+
+			positionBufferIn[idx] = make_float3(x, y, z);
+			positionBufferOut[idx] = make_float3(x, y, z);
 			pressureBuffer[idx] = DeviceConst::p;
 			densityBufferIn[idx] = DeviceConst::rho0;
 			densityBufferOut[idx] = DeviceConst::rho0;

@@ -77,8 +77,9 @@ namespace Const {
 	const float gridMin = -0.1f;
 	const float gridMax = 0.1f;
 
-	const int partNumX = 60;
-	const int partNumY = 60;
+	const int partNumX = 66;
+	const int partNumY = 66;
+
 
 	const unsigned int particleNum = partNumX * partNumY;
 
